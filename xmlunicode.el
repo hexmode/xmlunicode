@@ -206,6 +206,8 @@
 (defvar xmlunicode-ndash  (decode-char 'ucs #x002013))
 (defvar xmlunicode-mdash  (decode-char 'ucs #x002014))
 (defvar xmlunicode-hellip (decode-char 'ucs #x002026))
+(defvar xmlunicode-lguill (decode-char 'ucs #x0000ab))
+(defvar xmlunicode-rguill (decode-char 'ucs #x0000bb))
 
 (defvar xmlunicode-default-single-quote xmlunicode-apos
   "The default single quote character.")
@@ -659,6 +661,31 @@ there too."
         (delete-char -2)
         (insert xmlunicode-hellip)))
      (t (insert ".")))))
+
+(defun xmlunicode-smart-compare ()
+  "Insert a guillemet instead of double angle-brackets."
+  (interactive)
+  (let* ((ch1 (char-before))
+         (key (aref (this-command-keys) 0))
+         (keys (this-command-keys))
+         (substitution (if (char-equal key ?<) xmlunicode-lguill xmlunicode-rguill))
+         (xml (derived-mode-p 'nxml-mode))) ; only do XML tests in XML modes
+    (cond
+     ((eq nil ch1)
+      (insert keys))
+     ((xmlunicode--be-stupid)
+      (insert keys))
+     ((and xml (xmlunicode-in-comment))
+      (insert keys))
+     ((char-equal ch1 substitution)
+      (progn
+        (delete-char -1)
+        (insert (make-string 3 key))))
+     ((char-equal ch1 key)
+      (progn
+        (delete-char -1)
+        (insert substitution)))
+     (t (insert keys)))))
 
 (defun xmlunicode-smart-semicolon ()
   "Detect numeric character references and replace them with the appropriate char."
